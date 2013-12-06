@@ -4,20 +4,6 @@ set nu
 set shiftwidth=4
 set shiftround
 
-if has("gui_running")
-  " GUI is running or is about to start.
-  " Maximize gvim window.
-  set lines=999 columns=999
-else
-  " This is console Vim.
-  if exists("+lines")
-    set lines=50
-  endif
-  if exists("+columns")
-    set columns=100
-  endif
-endif
-
 " Key Mappings ---------------------- {{{
 noremap <leader>eg :sp $MYGVIMRC<CR>
 noremap <leader>sg :source $MYGVIMRC<CR>
@@ -67,6 +53,8 @@ augroup filetype_cpp
     autocmd FileType cpp iabbrev <buffer> ife if( )<cr>{<cr><cr>}<cr>else<cr>{<cr><cr>}<esc>kkkkkkkllli
     autocmd FileType cpp iabbrev <buffer> ifei if( )<cr>{<cr><cr>}<cr>else if(  )<cr>{<cr><cr>}<esc>kkkkkkkllli
 augroup END
+
+autocmd VimEnter * call s:SetWindowSize() 
 
 iabbrev adn and
 iabbrev waht what
@@ -134,4 +122,24 @@ command! -nargs=* -complete=command Redir :new | put! =GetVimCmdOutput('<args>')
 let g:p4ClientRoot = '/home/tpers/code/tpers-showstore-imbengine_dev-ubuntu' 
 
 runtime perforce/perforceutils.vim
-runtime perforce/perforcemenu.vim 
+runtime perforce/perforcemenu.vim
+
+function! s:SetWindowSize()
+	if has("gui_running")
+ 	  	" GUI is running or is about to start.
+  	  	" Maximize gvim window.
+  	  	set columns=468 lines=70
+		wincmd h
+		vertical resize 150
+		wincmd w
+		vertical resize 78
+	else
+  		" This is console Vim.
+  		if exists("+lines")
+    			set lines=50
+  		endif
+  		if exists("+columns")
+    			set columns=100
+  		endif
+	endif 
+endfunction
