@@ -1,16 +1,28 @@
 set nocp
-filetype plugin on
+filetype indent plugin on
 set nu
+set expandtab
 set shiftwidth=4
+set softtabstop=4
+set autoindent
 set shiftround
+set hlsearch incsearch
+
 
 " Key Mappings ---------------------- {{{
-noremap <leader>eg :sp $MYGVIMRC<CR>
-noremap <leader>sg :source $MYGVIMRC<CR>
+noremap <leader>eg :sp $MYGVIMRC<cr>
+noremap <leader>sg :source $MYGVIMRC<cr>
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 vnoremap <leader>" <esc>`>a"<esc>`<i"<esc>`>el
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
 vnoremap <leader>' <esc>`>a'<esc>`<i'<esc>`>el
+nnoremap <leader>w :match Error /\v\s+$/<cr>
+nnoremap <leader>ww :match None<cr>
+" nnoremap <leader>g :silent execute "grep! -r " . shellescape(expand("<cword>")) . " ." <cr>:copen<cr>
+nnoremap <leader>n :cnext<cr>
+nnoremap <leader>b :cprevious<cr>
+nnoremap / /\v
+noremap <leader>hl :nohlsearch<cr>
 inoremap <C-u> <esc>viwUA
 nnoremap <C-s> :w<CR>
 inoremap <C-s> <esc>:w<CR>a
@@ -130,9 +142,14 @@ function! s:SetWindowSize()
   	  	" Maximize gvim window.
   	  	set columns=468 lines=70
 		wincmd h
-		vertical resize 150
-		wincmd w
-		vertical resize 78
+		let l:current_buffer=bufnr("%")
+		if bufname( l:current_buffer ) == '__IDE_Project__'
+			vertical resize 150
+			wincmd w
+			if bufname( bufnr("%") ) == '__Tag_List__'
+				vertical resize 78
+			endif
+		endif
 	else
   		" This is console Vim.
   		if exists("+lines")
