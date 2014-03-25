@@ -4,6 +4,7 @@ set nu
 set expandtab
 set shiftwidth=4
 set softtabstop=4
+set tabstop=4
 set autoindent
 set shiftround
 set hlsearch incsearch
@@ -31,8 +32,12 @@ nnoremap <leader>h 0
 nnoremap <leader>l $
 vnoremap <leader>h 0
 vnoremap <leader>l $
-noremap <C-c> y
-noremap <C-v> p
+vnoremap / y<cr>/\v<C-R>"<cr>
+noremap <C-c> y<C-o>
+noremap <C-v> "0p
+inoremap <C-v> <C-R>"
+inoremap <C-z> <esc>ua
+inoremap <C-f> y<esc>/<C-p>  
 onoremap in( :<c-u>normal! f(vi(<cr>
 onoremap il( :<c-u>normal! F)vi(<cr>     
 onoremap an( :<c-u>normal! f(vt)l<cr>
@@ -140,15 +145,18 @@ function! s:SetWindowSize()
 	if has("gui_running")
  	  	" GUI is running or is about to start.
   	  	" Maximize gvim window.
-  	  	set columns=468 lines=70
+  	  	
 		wincmd h
 		let l:current_buffer=bufnr("%")
 		if bufname( l:current_buffer ) == '__IDE_Project__'
+            set columns=468 lines=70
 			vertical resize 150
 			wincmd w
 			if bufname( bufnr("%") ) == '__Tag_List__'
 				vertical resize 78
 			endif
+        else
+            set columns=239 lines=70
 		endif
 	else
   		" This is console Vim.
