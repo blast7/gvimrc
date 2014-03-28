@@ -6,34 +6,36 @@ current_dir()
 
 generate_ideC() 
 {
+    indent=0
     echo "$ide_name=$PWD flags=Sr filter=\"*.c*.cc*.cpp*.h*.hpp*.hh*.inl\" {" > $ide_file
     find . -maxdepth 1 -iname "*.hpp" -o -iname "*.hh" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.cc" -o -iname "*.c" -o -iname "*.inl" >> $ide_file
     for i in `find . -maxdepth 1 -type d -a \! -name . -a \! -name ..`
     do 
-        #echo "Found subfolder $i"
-        generateSubFolder $i
+        generateSubFolder $i $indent
     done
     echo "}" >> $ide_file
 }
 
 generateSubFolder()
 {
+    indentString=""
+    numIndents=$2
+    while [ "$numIndents" -gt 0 ] 
+    do
+        indentString="$indentString     "
+        numIndents=`expr $numIndents - 1`
+    done
     folderName=$1
-    echo "Generating project info for folder - $folderName, into project file $ide_file"
     cd $folderName
-    folderName=`echo $folderName | sed 's|./||g'` 
-    #echo "Truncated folder name - $folderName, working dir - $PWD"
-    #echo "$folderName=\"./$folderName\" {"
-    echo "$folderName=\"./$folderName\" {" >> $ide_file
-    #find . -maxdepth 1 -iname "*.hpp" -o -iname "*.hh" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.cc" -o -iname "*.c" -o -iname "*.inl" | sed 's|./||g'
-    find . -maxdepth 1 -iname "*.hpp" -o -iname "*.hh" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.cc" -o -iname "*.c" -o -iname "*.inl" | sed 's|./||g' >> $ide_file
+    folderName=`echo $folderName | sed "s|./||g"` 
+    echo "$indentString""$folderName=\"./$folderName\" {" >> $ide_file
+    find . -maxdepth 1 -iname "*.hpp" -o -iname "*.hh" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.cc" -o -iname "*.c" -o -iname "*.inl" | sed "s|./|$indentString\t|g" >> $ide_file
     for i in `find . -maxdepth 1 -type d -a \! -name . -a \! -name ..`
     do 
-        #echo "Found subfolder $i"
-        generateSubFolder $i
+        numNextIndents=`expr $2 + 1`
+        generateSubFolder $i $numNextIndents
     done
-    #echo "}"
-    echo "}" >> $ide_file
+    echo "$indentString}" >> $ide_file
 
     cd ../
 }
