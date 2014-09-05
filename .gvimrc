@@ -185,45 +185,47 @@ command! -nargs=* -complete=command Redir :new | put! =GetVimCmdOutput('<args>')
 " runtime perforce/perforcemenu.vim
 
 function! s:SetWindowSize()
-	if has("gui_running")
- 		" GUI is running or is about to start.
-  	  	" Maximize gvim window.
-  	    
-        let l:desktopSize = system( "wmctrl -d | tr '\t' ' ' | grep \"Workspace 1\" | cut -d ' ' -f 12" )
-        " echo l:desktopSize
-        let g:dim = split( l:desktopSize, 'x' )
-        " echo l:dim
-        " echo l:dim[0]
-        " echo l:dim[1]	
-		wincmd h
-		let l:current_buffer=bufnr("%")
-		if bufname( l:current_buffer ) == '__IDE_Project__'
-            if g:dim[0] <= 1960
-                set columns=239 lines=70
-                vertical resize 50
-                wincmd w
-                if bufname( bufnr("%") ) == '__Tag_List__'
-                    vertical resize 35
-                    " quit
+    if has("unix")
+        if has("gui_running")
+            " GUI is running or is about to start.
+            " Maximize gvim window.
+            
+            let l:desktopSize = system( "wmctrl -d | tr '\t' ' ' | grep \"Workspace 1\" | cut -d ' ' -f 12" )
+            " echo l:desktopSize
+            let g:dim = split( l:desktopSize, 'x' )
+            " echo l:dim
+            " echo l:dim[0]
+            " echo l:dim[1]	
+            wincmd h
+            let l:current_buffer=bufnr("%")
+            if bufname( l:current_buffer ) == '__IDE_Project__'
+                if g:dim[0] <= 1960
+                    set columns=239 lines=70
+                    vertical resize 50
+                    wincmd w
+                    if bufname( bufnr("%") ) == '__Tag_List__'
+                        vertical resize 35
+                        " quit
+                    endif
+                else 
+                    set columns=468 lines=70
+                    vertical resize 150
+                    wincmd w
+                    if bufname( bufnr("%") ) == '__Tag_List__'
+                        vertical resize 86
+                    endif
                 endif
-            else 
-                set columns=468 lines=70
-			    vertical resize 150
-			    wincmd w
-			    if bufname( bufnr("%") ) == '__Tag_List__'
-				    vertical resize 86
-			    endif
+            else
+                set columns=239 lines=70
             endif
         else
-            set columns=239 lines=70
-        endif
-    else
-        " This is console Vim.
-        if exists("+lines")
-            set lines=50
-        endif
-        if exists("+columns")
-            set columns=100
-        endif
-    endif 
+            " This is console Vim.
+            if exists("+lines")
+                set lines=50
+            endif
+            if exists("+columns")
+                set columns=100
+            endif
+        endif 
+    endif
 endfunction
