@@ -279,20 +279,20 @@ if !exists('g:IDE_isLoaded')
 	if has("win32") || has("win64")
 		let s:IDE_cmdCopy = "copy"
 		let s:IDE_cmdDelFile = "delete"
-		let s:IDE_PluginFolder = expand("$VIM"). "/.vim/plugin/"
+		let s:IDE_PluginFolder = expand("$VIM"). "/vimfiles/plugin/"
         if(s:IDE_SyntaxScriptFolder != '')
             let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_SyntaxScriptFolder,s:IDE_syntaxScript)
         else
 		    let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
         endif
 		if(s:IDE_SyntaxScriptFile=='')
-			let s:IDE_PluginFolder = expand('$HOME') . "/.vim/plugin/"
+			let s:IDE_PluginFolder = expand('$HOME') . "/vimfiles/plugin/"
 			let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
 		endif
         if !empty(glob(s:IDE_PluginFolder.'fswitch.vim'))
             let s:IDE_FSwitchEnabled = 'true'
         else
-            call s:IDE_InfoMsg( "Can't find header/source switching script: ".s:IDE_PluginFolder."fswitch.vim" )
+            echom "Can't find header/source switching script: ".s:IDE_PluginFolder."fswitch.vim"
         endif
 	else
 		let s:IDE_cmdCopy = "cp"
