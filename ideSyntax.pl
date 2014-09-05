@@ -304,9 +304,9 @@ sub main  {
 	my @syntax_table_sorted = sort keys %syntax_table;
 	my %group_table;
 	foreach my $key (@syntax_table_sorted) {		
-		my $group = "IDE_$ide"."_$syntax_table{$key}{'kind'}";
+		my $group = "IDE_____$ide"."_____$syntax_table{$key}{'kind'}";
 		if ( !($syntax_table{$key}{'access'} eq "none") ) {
-			$group = "$group"."_$syntax_table{$key}{'access'}";
+			$group = "$group"."_____$syntax_table{$key}{'access'}";
 		}
 		if( exists($group_table{$group}) ) { 
 			$group_table{$group} = $group_table{$group}." ".$key;
@@ -354,10 +354,10 @@ sub main  {
 		print OUTPUT "highlight def link $atgroup \t IDE_$ide";
 		my $item = "";
 		my $type = "";
-		if ($atgroup=~m{IDE_(.*)_(.*)_(.*)}) {
+		if ($atgroup=~m{IDE_____(.*)_____(.*)_____(.*)}) {
 			$item = $2;
 			$type = $3;
-		} elsif ($atgroup=~m{IDE_(.*)_(.*)}) {
+		} elsif ($atgroup=~m{IDE_____(.*)_____(.*)}) {
 			$item = $2;
 		}
 		if (($item eq "class")) {

@@ -7,7 +7,7 @@ current_dir()
 generate_ideC() 
 {
     indent=0
-    echo "$ide_name=$PWD flags=Sr filter=\"*.c*.cc*.cpp*.h*.hpp*.hh*.inl\" {" > $ide_file
+    echo "$ide_name=$PWD flags=Sr filter=\"*.c *.cc *.cpp *.h *.hpp *.hh *.inl\" {" > $ide_file
     find . -maxdepth 1 -iname "*.hpp" -o -iname "*.hh" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.cc" -o -iname "*.c" -o -iname "*.inl" >> $ide_file
     for i in `find . -maxdepth 1 -type d -a \! -name . -a \! -name ..`
     do 
@@ -28,7 +28,7 @@ generateSubFolder()
     folderName=$1
     cd $folderName
     folderName=`echo $folderName | sed "s|./||g"` 
-    echo "$indentString""$folderName=\"./$folderName\" {" >> $ide_file
+    echo "$indentString""$folderName=$PWD flags=Sr filter=\"*.c *.cc *.cpp *.h *.hpp *.hh *.inl\" {" >> $ide_file
     find . -maxdepth 1 -iname "*.hpp" -o -iname "*.hh" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.cc" -o -iname "*.c" -o -iname "*.inl" | sed "s|./|$indentString\t|g" >> $ide_file
     for i in `find . -maxdepth 1 -type d -a \! -name . -a \! -name ..`
     do 
@@ -70,7 +70,7 @@ else
         echo "  This script is usefull when creating a project out of a complex"
         echo "  source code structure, a somehow simpler approach can be achieved"
         echo "  by typing into a file"
-        echo "    main=. flags=Sr filter=\"*.c*.cc*.cpp*.h*.hpp*.hh*.inl\" {" 
+        echo "    main=. flags=Sr filter=\"*.c *.cc *.cpp *.h *.hpp *.hh *.inl\" {" 
         echo "    }"
         echo "  loading it into the IDE and then pressing '\r' followed by '<F2>'"
         exit

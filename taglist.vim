@@ -261,6 +261,8 @@ if !exists('loaded_taglist')
     endif
 
     autocmd TabEnter * call s:Tlist_Refresh()
+    autocmd WinEnter * call s:Tlist_Refresh()
+    " autocmd TabEnter * call s:Tlist_Refresh()
 
     if g:Tlist_Show_Menu
         autocmd GUIEnter * call s:Tlist_Menu_Init()

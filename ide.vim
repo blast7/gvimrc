@@ -30,8 +30,10 @@
 
 "==== Tab Movements ==================================================================
 if (v:version >= 700)
+    let g:IDE_TabSwitchCmd = 'false'
 	" === DoMove2LeftTab() ===================================================<<<
 	function! s:DoMove2LeftTab()
+        let s:IDE_TabSwitchCmd = 'true'
 		if !exists('g:IDE_Title') || bufwinnr(g:IDE_Title) == -1
 			exe 'tabprevious'
 		else
@@ -47,11 +49,12 @@ if (v:version >= 700)
 			if save_winnr != winnr()
 				call s:IDE_ExeWithoutAucmds(save_winnr . 'wincmd w')
 			endif
-		endif
+		endif        
 	endfunction
 	">>>
 	" === DoMove2NextTab() ===================================================<<<
 	function! s:DoMove2RightTab()
+        let s:IDE_TabSwitchCmd = 'true'
 		if !exists('g:IDE_Title') || bufwinnr(g:IDE_Title) == -1
 			exe 'tabnext'
 		else
@@ -169,7 +172,10 @@ if !exists('g:IDE_isLoaded')
 		call s:Set("g:IDE_Divider",'%%%%')
 	endif
 	call s:Set("g:IDE_UpdateSyntaxAt",'10%')
-	call s:Set("g:IDE_WindowWidth",24)
+    call s:Set("g:IDE_SyntaxScriptFolder",'')
+    call s:Set("g:IDE_SourceVimrcCommand",'<leader>sg')
+    call s:Set("g:IDE_AdditionalCTagsFiles", '') 
+    call s:Set("g:IDE_WindowWidth",24)
 	call s:Set("g:IDE_WindowIncrement",50)
 	if (v:version >= 700)
 		call s:Set("g:IDE_DefaultOpenMethod",'tabe')
@@ -264,22 +270,42 @@ if !exists('g:IDE_isLoaded')
 		let s:IDE_Divider .= s:IDE_Divider
 		let s:divw -= 1
 	endwhile
-	let s:IDE_syntaxScript = "ideSyntax.pl"
+    let s:IDE_FSwitchEnabled = 'false'
+	let s:IDE_syntaxScript = g:IDE_syntaxScript
+    let s:IDE_SyntaxScriptFolder = g:IDE_SyntaxScriptFolder
+    let s:IDE_SourceVimrcCommand = g:IDE_SourceVimrcCommand
+    let s:IDE_AdditionalCTagsFiles = g:IDE_AdditionalCTagsFiles
 	let s:IDE_existSyntaxScript=1
 	if has("win32") || has("win64")
 		let s:IDE_cmdCopy = "copy"
 		let s:IDE_cmdDelFile = "delete"
-		let s:IDE_PluginFolder = expand("$VIM"). "/vimfiles/plugin/"
-		let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
+		let s:IDE_PluginFolder = expand("$VIM"). "/.vim/plugin/"
+        if(s:IDE_SyntaxScriptFolder != '')
+            let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_SyntaxScriptFolder,s:IDE_syntaxScript)
+        else
+		    let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
+        endif
 		if(s:IDE_SyntaxScriptFile=='')
-			let s:IDE_PluginFolder = expand('$HOME') . "/vimfiles/plugin/"
+			let s:IDE_PluginFolder = expand('$HOME') . "/.vim/plugin/"
 			let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
 		endif
+        if !empty(glob(s:IDE_PluginFolder.'fswitch.vim'))
+            let s:IDE_FSwitchEnabled = 'true'
+        else
+            call s:IDE_InfoMsg( "Can't find header/source switching script: ".s:IDE_PluginFolder."fswitch.vim" )
+        endif
 	else
 		let s:IDE_cmdCopy = "cp"
 		let s:IDE_cmdDelFile = "rm"
 		let s:IDE_PluginFolder = expand('$HOME') . "/.vim/plugin/"
-		let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
+		if(s:IDE_SyntaxScriptFolder != '')
+            let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_SyntaxScriptFolder,s:IDE_syntaxScript)
+        else
+		    let s:IDE_SyntaxScriptFile = s:pathHasFile(s:IDE_PluginFolder,s:IDE_syntaxScript)
+        endif
+        if !empty(glob(s:IDE_PluginFolder.'fswitch.vim'))
+            let s:IDE_FSwitchEnabled = 'true'
+        endif   
 	endif
 	if(s:IDE_SyntaxScriptFile=='')
 		let s:IDE_existSyntaxScript=0
@@ -345,17 +371,23 @@ if !exists('g:IDE_isLoaded')
 		nnoremap <script> <Plug>Move2LeftTab :call <SID>DoMove2LeftTab()<CR>
 		if exists("g:IDE_MapMove2LeftTab") && g:IDE_MapMove2LeftTab != ''
 			if !hasmapto('<Plug>Move2LeftTab')
-				exe 'nmap <silent> ' . g:IDE_MapMove2LeftTab . ' <Plug>Move2LeftTab'
-				exe 'map <silent> ' . g:IDE_MapMove2LeftTab . ' <Plug>Move2LeftTab'
-				exe 'imap <silent> ' . g:IDE_MapMove2LeftTab . ' <ESC> <Plug>Move2LeftTab <CR>i'
+				"exe 'nmap <silent> ' . g:IDE_MapMove2LeftTab . ' <Plug>Move2LeftTab'
+				"exe 'map <silent> ' . g:IDE_MapMove2LeftTab . ' <Plug>Move2LeftTab'
+				"exe 'imap <silent> ' . g:IDE_MapMove2LeftTab . ' <ESC> <Plug>Move2LeftTab <CR>i'
+                exe 'nmap <silent> ' . g:IDE_MapMove2LeftTab . ' :tabprevious <CR>'
+                exe 'map <silent> ' . g:IDE_MapMove2LeftTab . ' :tabprevious <CR>'
+                exe 'imap <silent> ' . g:IDE_MapMove2LeftTab . ' <ESC> :tabprevious <CR>i'
 			endif
 		endif
 		nnoremap <script> <Plug>Move2RightTab :call <SID>DoMove2RightTab()<CR>
 		if exists("g:IDE_MapMove2RightTab") && g:IDE_MapMove2RightTab != ''
 			if !hasmapto('<Plug>MoveToRightTab')
-				exe 'nmap <silent> ' . g:IDE_MapMove2RightTab . ' <Plug>Move2RightTab'
-				exe 'map <silent> ' . g:IDE_MapMove2RightTab . ' <Plug>Move2RightTab'
-				exe 'imap <silent> ' . g:IDE_MapMove2RightTab . ' <ESC> <Plug>Move2RightTab <CR>i'
+				"exe 'nmap <silent> ' . g:IDE_MapMove2RightTab . ' <Plug>Move2RightTab'
+				"exe 'map <silent> ' . g:IDE_MapMove2RightTab . ' <Plug>Move2RightTab'
+				"exe 'imap <silent> ' . g:IDE_MapMove2RightTab . ' <ESC> <Plug>Move2RightTab <CR>i'
+                exe 'nmap <silent> ' . g:IDE_MapMove2RightTab . ' :tabnext <CR>'
+                exe 'map <silent> ' . g:IDE_MapMove2RightTab . ' :tabnext <CR>'
+                exe 'imap <silent> ' . g:IDE_MapMove2RightTab . ' <ESC> :tabnext <CR>i'
 			endif
 		endif
 		">>>
@@ -410,15 +442,19 @@ function! s:IDE_VariableInitialization()
 	let s:IDE_ProjectID = 0
 	let s:IDE_isToggled = 0
 	" === Do not waste memory, make sure everything is trash before reusing
-	unlet! s:IDE_ProjectSyn s:IDE_Launched s:IDE_File s:IDE_Project s:IDE_BufferMap s:IDE_PendingUpdate
+	unlet! s:IDE_ProjectSyn s:IDE_Launched s:IDE_File s:IDE_Project s:IDE_BufferMap s:IDE_PendingUpdate s:IDE_TagsDirs
 	let s:IDE_ProjectSyn = {}
 	let s:IDE_Launched = {}
 	let s:IDE_File = {}
 	let s:IDE_Project = {}
+    let s:IDE_TagsDirs = {}
 	"IDEA: change buffer map so it only has loaded buffer files
 	let s:IDE_BufferMap = {}
 	let s:IDE_PendingUpdate = {}
 	let s:IDE_MaxDepth = 0
+    let s:IDE_TabSwitchCmd = 'false'
+    let s:IDE_OpenedFileFromIde = 'false'
+    let s:IDE_TabEnterCount = 0
 endfunction
 ">>>
 " === IDE_ShowEnvironment() ==============================================<<<
@@ -469,6 +505,8 @@ function s:IDE_ShowEnvironment()
 	echo "  s:IDE_ProjectName              = ".s:IDE_ProjectName
 	echo "  s:IDE_Launched['name']         = ".s:IDE_Launched['name']
 	echo "  s:IDE_Launched['file']         = ".s:IDE_Launched['file']
+    echo "  s:IDE_TagsDirs['view']         = ".s:IDE_TagsDirs['view']
+    echo "  s:IDE_TagsDirs['project']      = ".s:IDE_TagsDirs['project']   
 	echo "  s:IDE_Buffer                   = ".s:IDE_Buffer
 	echo "  s:IDE_isModified               = ".s:IDE_isModified
 	echo "  s:IDE_isLogging                = ".s:IDE_isLogging
@@ -484,6 +522,7 @@ function s:IDE_ShowEnvironment()
 		echo "IDE Syntax variables: (valid while project is loaded)"
 		echohl MoreMsg
 		if exists('s:IDE_ProjectSyn')
+            echo "  * name of IDE project          = ".s:IDE_ProjectSyn['name']
 			echo "  * syntax for IDE project       = ".s:IDE_ProjectSyn['root']
 			echo "  * generated syntax file        = ".s:IDE_ProjectSyn['syntax']
 			echo "  * files given to ctags         = ".s:IDE_ProjectSyn['files']
@@ -505,6 +544,8 @@ function s:IDE_ShowEnvironment()
 	echo "  g:IDE_isLoaded                 = ".g:IDE_isLoaded
 	echo "  g:IDE_WindowWidth              = ".g:IDE_WindowWidth
 	echo "  g:IDE_WindowIncrement          = ".g:IDE_WindowIncrement
+    echo "  g:IDE_SyntaxScriptFolder       = ".g:IDE_SyntaxScriptFolder
+    echo "  g:IDE_AdditionalCTagsFiles     = ".g:IDE_AdditionalCTagsFiles
 	echo "  g:IDE_MapMove2RightTab         = ".g:IDE_MapMove2RightTab
 	echo "  g:IDE_MapMove2LeftTab          = ".g:IDE_MapMove2LeftTab
 	echo "  g:IDE_MapProjectToggle         = ".g:IDE_MapProjectToggle
@@ -1065,7 +1106,7 @@ endfunction
 function! s:IDE_Assert(condition,msg)
 	if !a:condition
 		call s:IDE_ErrorMsg('[Assertion Failed] '.a:msg)
-		call s:IDE_TraceMsg('[Assertion Failed] '.a:msg)
+		call s:IDE_TraceLog('[Assertion Failed] '.a:msg)
 	endif
 endfunction
 ">>>
@@ -1268,7 +1309,7 @@ function! s:IDE_ReleaseAll()
 	call s:IDE_ReleaseCommands()
 	call s:IDE_ReleaseSyntax()
 	call s:IDE_ReleaseBuffer()
-	unlet! s:IDE_ProjectSyn s:IDE_Launched s:IDE_File s:IDE_Project s:IDE_BufferMap s:IDE_PendingUpdate
+	unlet! s:IDE_ProjectSyn s:IDE_Launched s:IDE_File s:IDE_Project s:IDE_BufferMap s:IDE_PendingUpdate s:IDE_TagsDirs
 endfunction
 ">>>
 " === IDE_ReleaseBuffer() ================================================<<<
@@ -1662,6 +1703,8 @@ function! s:IDE_InitializeCommands()
 	cnoremap <buffer> write <CR>:IDESave
 	cabbrev q quit
 	cabbrev w write
+    noremap <leader>sg :call <SID>IDE_SourceSyntaxFile()<CR>
+    nnoremap <leader>bt :call <SID>IDE_RefreshTagsFiles()<CR>
 	"cabbrev q <c-R>=((getcmdtype()==':' && getcmdpos()==1) ? 'quit' : 'q')<cr>
 	"cabbrev w <c-R>=((getcmdtype()==':' && getcmdpos()==1) ? 'write' : 'w')<cr>
 	">>>
@@ -1728,6 +1771,10 @@ function! s:IDE_InitializeCommands()
 	nnoremap <buffer> <silent> <S-F2> 			:call <SID>IDE_SaveProjectAndExit()<CR>
 	nnoremap <buffer> <silent> <C-F2> 			:call <SID>IDE_SafeExit()<CR>
 	nnoremap <buffer> <silent> q 				:call <SID>IDE_ToggleClose()<CR>
+    if s:IDE_FSwitchEnabled == 'true'
+        call s:IDE_InfoMsg( "Mapping open header/source file" )
+        nnoremap <silent> <leader><S-S>         :call <SID>IDE_SwitchToAlternateFile()<CR>
+    endif
 	" Test mapings
 	"nnoremap <buffer> <silent> <F11>    		:call <SID>IDE_ConstructProject(line('.'),'')<CR>
 	" nnoremap <buffer> <silent> <C-F11>   		:call <SID>IDE_GenerateFileMap(line('.'))<CR>
@@ -1754,6 +1801,9 @@ function! s:IDE_InitializeCommands()
 		autocmd InsertEnter __IDE_Project__ call s:IDE_BeforeEdit_au()
 		autocmd InsertLeave __IDE_Project__ call s:IDE_AfterEdit_au()
 		autocmd CursorHold __IDE_Project__ call s:IDE_ShowInfo_atline()
+        autocmd TabLeave * call s:IDE_LeaveTabCloseIDE()
+        autocmd TabEnter * call s:IDE_EnterTabOpenIDE()
+        "autocmd SourceCmd .gvimrc call s:IDE_SourceSyntaxFile()
 		" Adjust the Vim window width when IDE window is closed
 		"autocmd BufUnload __IDE_Project__ call s:IDE_ReleaseBuffer()
 		"autocmd BufUnload * call s:IDE_CloseTabIfOnlyWindow_au()
@@ -1830,6 +1880,19 @@ function! s:IDE_Initialize(filename,fullname)
 	let s:IDE_Launched['dir_esc'] = escape(getcwd(),' #%')
 	call s:IDE_LoadProject()
 	call s:IDE_StartSyntax()
+
+    " Set the tags option for Vim
+    let l:devel_idx = stridx( s:IDE_Launched['file_esc'], "devel" ) 
+    let s:IDE_TagsDirs['view'] = strpart( s:IDE_Launched['file_esc'], 0, l:devel_idx + 10 )
+    "call s:IDE_InfoMsg( "Found the root of the showstore view:".s:IDE_TagsDirs['view']." at index = ".l:devel_idx )
+    let l:proj_idx = stridx( s:IDE_Launched['file_esc'], s:IDE_Launched['name'] ) 
+    let s:IDE_TagsDirs['project'] = strpart( s:IDE_Launched['file_esc'], 0, l:proj_idx )
+    "call s:IDE_InfoMsg( "Found the root of the current project:".s:IDE_TagsDirs['project']." at index = ".l:proj_idx ) 
+    let l:view_tags = s:IDE_TagsDirs['view']."tags"
+    let l:project_tags = s:IDE_TagsDirs['project']."tags"
+    "call s:IDE_InfoMsg( "Files to be added to tags option: ".l:view_tags." and ".l:project_tags )
+    exe 'set tags=./tags,./TAGS,tags,TAGS,'.l:project_tags.','.l:view_tags.','.s:IDE_AdditionalCTagsFiles
+
 	" we have finish loading the project, the current project in the IDE is
 	" an image of the project in file, so set the IDE buffer to not modified
 	call setbufvar(g:IDE_Title, '&modified', '0')
@@ -1851,7 +1914,7 @@ function! s:IDE_Load(...)
 	if exists("g:IDE_Title") && bufnr(g:IDE_Title) == -1
 		" the buffer has been wipe out by the user (or by a command given by the user)
 		unlet g:IDE_Title
-		unlet! s:IDE_ProjectSyn s:IDE_Launched s:IDE_File s:IDE_Project s:IDE_BufferMap s:IDE_PendingUpdate
+		unlet! s:IDE_ProjectSyn s:IDE_Launched s:IDE_File s:IDE_Project s:IDE_BufferMap s:IDE_PendingUpdate s:IDE_TagsDirs
 		call s:IDE_WarnMsg("FYI The autocommands were dissabled and then the IDE was wipeout")
 	endif
 	if !exists("g:IDE_Title")
@@ -1990,7 +2053,10 @@ endfunction
 " === IDE_isLastBufferInWindow() =========================================<<<
 function! s:IDE_isLastBufferInWindow()
 	call s:IDE_TraceLog("IDE_isLastBufferInWindow()")
-	if winbufnr(2) == -1
+    if winnr('$') == 1 && bufname(winbufnr('$')) == g:IDE_Title
+        return 1
+    endif
+	if winbufnr(2) == -1 && winbufnr(3) == -1
 		return 1
 	endif
 	return 0
@@ -2066,6 +2132,7 @@ function! s:IDE_GainFocusIfOpenInWindows()
 	if l:winnum != -1
 		if winnr() != l:winnum
 			call s:IDE_ExeWithoutAucmds(l:winnum . 'wincmd w')
+            call s:IDE_InfoMsg("Attempt to focus the IDE window. buf name = ".bufname("%") )
 		endif
 		return 1
 	endif
@@ -2100,7 +2167,11 @@ endfunction
 " === assumes we are in focus!!, that is IDE_GetWindowState() == 1
 function! s:IDE_ToggleClose()
 	call s:IDE_TraceLog('IDE_ToggleClose()')
-	silent! hide
+    if bufname("%") == g:IDE_Title
+	    silent! hide
+    else
+        call s:IDE_InfoMsg("IDE_ToggleClose called on buf = ".bufname("%"))
+    endif
 endfunction
 ">>>
 " === IDE_ToggleOpen() ===================================================<<<
@@ -2214,6 +2285,58 @@ function! s:IDE_RevertWindowWidth()
 	let s:IDE_isWindowSizeChanged = -1
 endfunction
 ">>>
+" === IDE_EnterTabOpenIDE ================================================<<<
+function! s:IDE_EnterTabOpenIDE()
+
+    if s:IDE_TabSwitchCmd == 'true'
+        let s:IDE_TabSwitchCmd = 'false'
+        return 0
+    endif
+
+    if s:IDE_OpenedFileFromIde == 'true'
+        let s:IDE_OpenedFileFromIde = 'false'
+        return 0
+    endif
+
+    let s:IDE_TabEnterCount = s:IDE_TabEnterCount + 1
+    
+    "call s:IDE_InfoMsg("About to setup IDE window in new tab ".s:IDE_TabEnterCount)
+
+    if bufwinnr(g:IDE_Title) == -1
+        "call s:IDE_InfoMsg("Opening IDE window in new tab")
+        "call s:IDE_InfoMsg("Current windowed buffer name = ".bufname("%"))
+        "call s:IDE_InfoMsg("Switching to buffer = ".bufname(l:currentSourceFileBufNum))
+        "call s:IDE_OpenOrJumpTo(bufname(l:currentSourceFileBufNum),g:IDE_DefaultOpenMethod)
+        call s:IDE_ToggleOpen()
+        "call s:IDE_InfoMsg("IDE window setup and split in new tab")
+        call s:DoWindowSetupAndSplit()
+    endif
+    if bufwinnr(g:IDE_Title) != winnr()
+        call s:IDE_ExeWithoutAucmds(bufwinnr(g:IDE_Title) . 'wincmd w')
+    endif
+endfunction
+">>>
+" === IDE_LeaveTabCloseIDE ================================================<<<
+function! s:IDE_LeaveTabCloseIDE()
+
+    if s:IDE_TabSwitchCmd == 'true'
+        " let s:IDE_TabSwitchCmd = 'false'
+        return 0
+    endif
+
+    if s:IDE_OpenedFileFromIde == 'true'
+        " let s:IDE_OpenedFileFromIde = 'false'
+        return 0
+    endif
+
+    let l:doToggle = s:IDE_GainFocusIfOpenInWindows()
+    if l:doToggle == 1
+        call s:IDE_ToggleClose()
+    endif
+
+endfunction
+">>>
+
 " === IDE Syntax
 " === IDE_TrackProjectChanges_au() =======================================<<<
 function! s:IDE_TrackProjectChanges_au()
@@ -2292,7 +2415,7 @@ function! s:IDE_RefreshSyntax()
 			if bufexists(l:last_buffer) && bufloaded(l:last_buffer)
 				let l:bufname = fnamemodify(bufname(l:last_buffer),':p')
 				if has_key(s:IDE_BufferMap,l:bufname)
-					call s:IDE_InfoMsg("Refreshing syntax highlight in IDE files ".(l:count*100/l:total)."%")
+					call s:IDE_InfoMsg("Refreshing syntax highlight in IDE files ".(l:count*100/l:total)."%"." ".l:total." files, buffer name: ".l:bufname)
 					call s:IDE_LogMsg("Refreshing syntax highlight in IDE files ".(l:count*100/l:total)."%"." ".l:total." files, buffer name: ".l:bufname)
                     " open the buffer we are iterating over even if it is
                     " hidden, making sure not to modify the jumpslist then 
@@ -2320,6 +2443,7 @@ function! s:IDE_StartSyntax()
 	let s:IDE_ProjectSyn['syntax'] = l:projectHead . '.ide.syntax'
 	let s:IDE_ProjectSyn['syntax_esc'] = l:projectHead_esc . '.ide.syntax'
     let s:IDE_ProjectSyn['root'] = l:projectHead
+    let s:IDE_ProjectSyn['name'] = l:project
 	let s:IDE_ProjectSyn['files'] = l:projectHead.'.ide.files'
 	let s:IDE_ProjectSyn['tags'] = l:projectHead.'.ide.tags'
     let s:IDE_ProjectSyn['dir'] = s:IDE_Launched['dir']
@@ -2359,7 +2483,16 @@ function! s:IDE_CopySyntaxScript()
 	call s:IDE_LogMsg("Copying script file: ".s:IDE_syntaxScript)
     " exe "silent !".s:IDE_cmdDelFile." ".s:IDE_syntaxScript
 	" exe "silent !".s:IDE_cmdCopy." ".s:IDE_PluginFolder.s:IDE_syntaxScript." ."
-    exe "silent !".s:IDE_cmdCopy." ".s:IDE_PluginFolder.s:IDE_syntaxScript." ".s:IDE_ProjectSyn['dir']
+    if s:IDE_SyntaxScriptFolder != '' 
+        let l:syntaxScriptLoc = s:IDE_SyntaxScriptFolder.s:IDE_syntaxScript
+    else
+        let l:syntaxScriptLoc = s:IDE_PluginFolder.s:IDE_syntaxScript
+    endif
+    if !has("win32") && !has("win64")
+        exe "silent !"."ln -s ".l:syntaxScriptLoc." ".s:IDE_ProjectSyn['dir']
+    else
+        exe "silent !".s:IDE_cmdCopy." ".l:syntaxScriptLoc." ".s:IDE_ProjectSyn['dir']
+    endif
 	if v:shell_error
 		call s:IDE_LogMsg("Cannot copy syntax script: ".s:IDE_syntaxScript)
 		return 0
@@ -2381,7 +2514,7 @@ function! s:IDE_CreateSyntaxFile(verbose)
 		endif
         " The command below executes the syntax script in the current
         " directory. Should it execute it in the project directory?
-        let l:out =	system(s:IDE_ProjectSyn['dir'].'/'.s:IDE_syntaxScript." ".s:IDE_ProjectSyn['root'])
+        let l:out =	system(s:IDE_ProjectSyn['dir'].'/'.s:IDE_syntaxScript." ".s:IDE_ProjectSyn['name'])
 		" let l:out =	system("./".s:IDE_syntaxScript." ".s:IDE_ProjectSyn['root'])
 		if v:shell_error
 			call s:IDE_WarnMsg("Failed to (re)generate advanced syntax highlight file.")
@@ -2421,6 +2554,25 @@ function! s:IDE_CreateSyntaxFileList(verbose)
 	endfor
 	redir END
 	let s:IDE_isDebugging = stop_dbg_redirection
+endfunction
+">>>
+" === IDE_SourceSyntaxFile() ============================================<<<
+function! s:IDE_SourceSyntaxFile()
+    if $MYGVIMRC != '' && has("gui_running")
+        exe "source ".$MYGVIMRC
+    elseif $MYVIMRC != ''
+        exe "source ".$MYVIMRC
+    else
+        call s:IDE_ErrorMsg("Unable to find .gvimrc or .vimrc based on the value of variables, MYGVIMRC = ".$MYGVIMRC.", MYVIMRC = ".$MYVIMRC )
+        return -1
+    endif
+    call s:IDE_RefreshSyntax()
+
+    " The call below is necessary because Vim honors the last map command
+    " sourced to the current file. So if .gvimrc maps <leader>sg
+    " need to remap it again afterwrds so that the next time the user 
+    " executes <leader>sg we get to this function and not the .gvimrc version
+    exe 'noremap '.s:IDE_SourceVimrcCommand.' :call <SID>IDE_SourceSyntaxFile()<CR>'
 endfunction
 ">>>
 " === IDE Sign
@@ -2884,6 +3036,7 @@ function! s:IDE_OpenFileEntry(id,editcmd)
 	if !has_key(s:IDE_File,a:id)
 		return 0
 	endif
+    let s:IDE_OpenedFileFromIde = 'true'
 	let l:filename=s:IDE_File[a:id]['name']
 	let l:parent=s:IDE_File[a:id]['parent']
 	let l:filename = s:IDE_GetFileName(l:filename,l:parent)
@@ -2892,6 +3045,7 @@ function! s:IDE_OpenFileEntry(id,editcmd)
 		call s:IDE_ToggleClose()
 		let l:reopenTab = 1
 	endif
+    "call s:IDE_InfoMsg( "Jumping to file: ".l:filename )
 	let l:needSetup = s:IDE_OpenOrJumpTo(l:filename,a:editcmd)
 	if l:needSetup || !exists('b:IDE_autocmd_ID')
 		call s:IDE_SetupFile(l:parent)
@@ -3021,6 +3175,8 @@ function! s:IDE_SetupFileAutocommand(buffer)
 		autocmd BufRead,BufNewFile <buffer> silent! exe source s:IDE_ProjectSyn['syntax_esc']
 		"autocmd CursorHold <buffer> call s:IDE_UpdateSyntax_au()
 		autocmd BufEnter <buffer> call s:IDE_UpdateSyntax_au()
+        "autocmd BufWinEnter *.cpp call s:IDE_RefreshSyntax()
+        "autocmd BufWinEnter *.h call s:IDE_RefreshSyntax()    
 	endif
 	if s:IDE_isEnableSignMarks
 		autocmd BufEnter,BufLeave <buffer> call s:IDE_SignRedrawOpen_au()
@@ -3331,13 +3487,13 @@ function! s:IDE_RefreshEntries(recursive,type)
 			endif
 			call add(l:idlist,l:iter)
 			let l:torefresh[l:iter] = {'sorting':l:sort,'top':l:atTop,'refresh':l:refresh}
-			"call s:IDE_InfoMsg('to refresh id='.l:iter.' sorting='.l:sort.' top='.l:atTop.' refresh='.l:refresh)
+			call s:IDE_InfoMsg('to refresh id='.l:iter.' sorting='.l:sort.' top='.l:atTop.' refresh='.l:refresh)
 		endif
 		let l:iter -= 1
 	endwhile
 	let l:cwd=getcwd()
 	for pid in l:idlist
-		"call s:IDE_InfoMsg("Refreshing project ".s:IDE_Project[pid]['name']." with ID=".pid)
+		call s:IDE_InfoMsg("Refreshing project ".s:IDE_Project[pid]['name']." with ID=".pid)
 		if l:torefresh[pid]['refresh']
 			call s:IDE_RefreshEntry(pid,l:torefresh[pid]['sorting'],l:torefresh[pid]['top'],a:type)
 		endif
@@ -3390,6 +3546,7 @@ function! s:IDE_RefreshEntry(id,sort,top,type)
 	let l:spaces=strpart('                                               ', 0, l:foldlev)
 	if a:type==1
 		" refresh the content of the project from its directory and filter
+        call s:IDE_InfoMsg("About to get directory listing for ".l:home.", filter = ".filter.", spaces = ".l:spaces)
 		exe 'cd '.l:home
 		call s:IDE_DirListing(filter, l:spaces, 'b:files','b:dirs')
 		if a:sort
@@ -3570,11 +3727,11 @@ function! s:DoWindowSetupAndSplit()
 		exe 'silent! wincmd L'
 	endif
 	wincmd t
-	call s:IDE_TraceLog('About to rezie window (IDE) to: '.s:IDE_userWindowWidth)
+	call s:IDE_TraceLog('About to resize window (IDE) to: '.s:IDE_userWindowWidth)
 	exe 'silent! vert res'.s:IDE_userWindowWidth
 	wincmd w
 	if bufwinnr('__Tag_List__') != -1
-		exe 'silent! vert res 78'
+		exe 'silent! vert res 86'
 	endif
 endfunction
 ">>>
@@ -4502,6 +4659,39 @@ function! IDE_start()
 	endif
 endfunction
 ">>>
+" === IDE_SwitchToAlternateFile() ========================================<<<
+function! s:IDE_SwitchToAlternateFile()
+    let l:window_count = winnr('$')
+    let l:current_index = 1
+    "call s:IDE_InfoMsg("About to switch to alternate file")
+    while l:current_index <= l:window_count 
+        let l:current_ext = expand('%:e')  
+        if l:current_ext == 'cpp' || l:current_ext == 'h' || l:current_ext == 'c' || l:current_ext == 'cc'
+            let b:fswitchlocs = 'abs:'.expand('%:p:h')      
+            FSGetCompanionFilename
+            if exists( "b:companion_file" )
+                "call s:IDE_InfoMsg( "Companion file = ".b:companion_file )
+                if has_key( s:IDE_BufferMap, b:companion_file )
+                    let l:file_id = s:IDE_BufferMap[b:companion_file]
+                    let l:ide_winnr = bufwinnr(bufname(g:IDE_Title))
+                    exe l:ide_winnr.'wincmd w'
+                    if bufname('%') == g:IDE_Title
+                        call s:IDE_OpenFileEntry( l:file_id, g:IDE_DefaultOpenMethod )
+                    else
+                        call s:IDE_ErrorMsg( "Can't open companion file if the current buffer/window is NOT the project window" )
+                    endif
+                else
+                    call s:IDE_ErrorMsg( "Can't find file ".b:companion_file." in the buffer map" )
+                endif
+            endif
+            break
+        else
+            wincmd w 
+            let l:current_index += 1
+        endif
+    endwhile    
+endfunction
+">>>
 " === IDE_Refresh() ======================================================<<<
 " === Refresh the IDE
 function! s:IDE_Refresh()
@@ -4547,6 +4737,37 @@ function! s:IDE_Refresh()
 		" Restore screen updates
 		let &lazyredraw = old_lazyredraw
 	endif
+endfunction
+">>>
+" === IDE_RefreshTagsFiles() =============================================<<<
+function! s:IDE_RefreshTagsFiles()
+    let l:current_dir = fnamemodify('.',':p')
+
+    " switch to source window
+    let l:window_count = winnr('$')
+    let l:current_index = 1
+    while l:current_index <= l:window_count 
+        let l:current_ext = expand('%:e')  
+        if l:current_ext == 'cpp' || l:current_ext == 'h' || l:current_ext == 'c' || l:current_ext == 'cc'
+            break
+        else
+            wincmd w 
+            let l:current_index += 1
+        endif
+    endwhile    
+
+    exe 'cd '.expand('%:p:h')
+    let l:out = system( 'ctags *' )
+    if( s:IDE_TagsDirs['view'] != '' )
+        exe 'cd '.s:IDE_TagsDirs['view']
+        let l:out = system( 'ctags --file-scope=no -R' )
+    endif
+    if( s:IDE_TagsDirs['project'] != '' )
+        exe 'cd '.s:IDE_TagsDirs['project']
+        let l:out = system( 'ctags --file-scope=no -R' )
+    endif
+    exe 'cd '.l:current_dir
+    call s:IDE_UpdateSyntax()
 endfunction
 ">>>
 " === IDE_isValid() ======================================================<<<
