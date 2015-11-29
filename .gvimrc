@@ -9,6 +9,10 @@ set autoindent
 set shiftround
 set hlsearch incsearch
 
+if( has("win32") || has("win64") )
+    :highlight LineNr term=bold cterm=NONE ctermfg=DarkGrey ctermbg=NONE gui=NONE guifg=DarkGrey guibg=NONE
+endif
+
 
 " Key Mappings ---------------------- {{{
 noremap <leader>eg :sp $MYGVIMRC<cr>
